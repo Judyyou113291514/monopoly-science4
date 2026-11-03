@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>翰林四上自然大富翁</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* 版面：粉彩糖果風的 7×7 環狀棋盤，中央是骰子；右側只留兩隊卡片與可收合的紀錄 */
+:root{
+  --ground:#EEF0FF;      /* 淡薰衣草藍 */
+  --board:#FFFFFF;
+  --cell:#F7F8FF;
+  --ink:#3B3557;         /* 深莓紫墨色 */
+  --ink-soft:#8A84A8;
+  --line:#E2E4F6;
+  --p1:#FF6F8E;          /* 草莓 */
+  --p2:#4C9BFF;          /* 蘇打 */
+  --p3:#9B6BF2;          /* 葡萄 */
+  --gold:#FFC93C;        /* 布丁黃 */
+  --gold-ink:#4A3500;
+  --good:#22B573; --bad:#F2556B;
+  --overlay:rgba(59,53,87,.42);
+  --shadow:0 6px 0 rgba(122,112,190,.12), 0 14px 30px rgba(122,112,190,.12);
+  --f-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#1C1A2B; --board:#262338; --cell:#302C46; --ink:#F1EEFF; --ink-soft:#A9A3C9; --line:#3D3858;
+  --p1:#FF809B; --p2:#6BAEFF; --p3:#B590FF; --gold:#FFD25C; --gold-ink:#3A2900; --good:#3CCB88; --bad:#FF7486;
+  --overlay:rgba(0,0,0,.55); --shadow:0 6px 0 rgba(0,0,0,.25), 0 14px 30px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#1C1A2B; --board:#262338; --cell:#302C46; --ink:#F1EEFF; --ink-soft:#A9A3C9; --line:#3D3858;
+  --p1:#FF809B; --p2:#6BAEFF; --p3:#B590FF; --gold:#FFD25C; --gold-ink:#3A2900; --good:#3CCB88; --bad:#FF7486;
+  --overlay:rgba(0,0,0,.55); --shadow:0 6px 0 rgba(0,0,0,.25), 0 14px 30px rgba(0,0,0,.3); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:18px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,32px);margin:0;letter-spacing:.04em;display:flex;align-items:center;gap:10px}
+h1 .logo{width:1.4em;height:1.4em;border-radius:30%;background:var(--gold);display:grid;place-items:center;font-size:.8em;box-shadow:0 3px 0 rgba(0,0,0,.08)}
+h1 small{display:none}
+.toplinks{display:flex;gap:8px;flex-wrap:wrap}
+.ghost{background:var(--board);border:0;border-radius:999px;padding:7px 16px;font-size:14px;color:var(--ink);box-shadow:0 3px 0 var(--line)}
+.ghost:hover{background:var(--cell)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;align-items:start}
+@media (max-width:920px){.layout{grid-template-columns:minmax(0,1fr)}}
+
+/* 棋盤 */
+.boardbox{background:var(--board);border-radius:28px;padding:12px;box-shadow:var(--shadow);width:100%;max-width:700px;margin:0 auto}
+.board{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:repeat(7,minmax(0,1fr));gap:6px;aspect-ratio:1;width:100%}
+.cell{position:relative;background:var(--cell);border-radius:clamp(8px,1.8vw,16px);overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;
+  font-size:clamp(9px,1.5vw,13px);line-height:1.2;transition:background .25s,transform .2s;border:2px solid transparent}
+.cell .tag{white-space:nowrap;max-width:100%;overflow:hidden;
+  font-size:clamp(7px,1.1vw,10.5px);font-weight:700;padding:1px clamp(4px,.8vw,8px);border-radius:999px;
+  color:var(--u);background:color-mix(in srgb,var(--u) 16%,transparent)}
+.cell .nm{font-family:var(--f-display);font-size:1.2em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cell .pr{color:var(--ink-soft);font-variant-numeric:tabular-nums;font-size:.9em}
+.cell .lv{font-size:.8em;letter-spacing:1px;line-height:1}
+.cell .lv:empty{display:none}
+@media (max-width:520px){.cell .tag{padding:0 3px}.cell .pr{font-size:.85em}.cell.special .sub{display:none}}
+.cell.own0{background:color-mix(in srgb,var(--p1) 22%,var(--cell));border-color:color-mix(in srgb,var(--p1) 55%,transparent)}
+.cell.own1{background:color-mix(in srgb,var(--p2) 22%,var(--cell));border-color:color-mix(in srgb,var(--p2) 55%,transparent)}
+.cell.own0 .lv{color:var(--p1)} .cell.own1 .lv{color:var(--p2)}
+.cell.special{background:color-mix(in srgb,var(--gold) 26%,var(--cell))}
+.cell.special .big{font-family:var(--f-display);font-size:1.3em}
+.cell.special .sub{font-size:.8em;color:var(--ink-soft)}
+.cell.here{border-color:var(--gold);transform:scale(1.04);z-index:1}
+.toks{position:absolute;right:2px;bottom:2px;display:flex;gap:1px}
+.tok{width:clamp(16px,2.9vw,26px);height:clamp(16px,2.9vw,26px);border-radius:50%;display:grid;place-items:center;
+  font-size:clamp(10px,1.8vw,16px);border:2px solid #fff;box-shadow:0 2px 0 rgba(0,0,0,.12)}
+.tok.t0{background:var(--p1)} .tok.t1{background:var(--p2)}
+.tok.hop{animation:hop .22s ease-out}
+@keyframes hop{0%{transform:translateY(0)}45%{transform:translateY(-8px)}100%{transform:translateY(0)}}
+
+.center{grid-row:2/7;grid-column:2/7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(6px,1.5vw,14px);
+  text-align:center;padding:clamp(6px,2vw,18px);min-width:0}
+.center .ttl{font-family:var(--f-display);font-size:clamp(18px,3.6vw,32px);line-height:1.2}
+.center .round{color:var(--ink-soft);font-size:clamp(11px,1.6vw,13.5px);font-variant-numeric:tabular-nums;background:var(--cell);padding:2px 12px;border-radius:999px}
+.turnpill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 16px;color:#fff;font-family:var(--f-display);font-size:clamp(13px,2.2vw,18px)}
+.turnpill.t0{background:var(--p1)} .turnpill.t1{background:var(--p2)}
+.dice{width:clamp(54px,10vw,84px);aspect-ratio:1;background:#fff;border-radius:26%;box-shadow:0 5px 0 #E3DFF5,0 10px 18px rgba(122,112,190,.2);
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:clamp(8px,1.6vw,13px);gap:clamp(2px,.5vw,4px)}
+.dice i{border-radius:50%;background:transparent;aspect-ratio:1;width:100%}
+.dice i.on{background:#3B3557}
+.dice.rolling{animation:shake .12s linear infinite}
+@keyframes shake{0%{transform:rotate(-10deg) scale(1.05)}50%{transform:rotate(10deg)}100%{transform:rotate(-10deg) scale(1.05)}}
+.roll{background:var(--gold);color:var(--gold-ink);border:0;border-radius:999px;padding:clamp(8px,1.6vw,12px) clamp(22px,3.4vw,34px);
+  font-family:var(--f-display);font-size:clamp(15px,2.6vw,21px);box-shadow:0 5px 0 color-mix(in srgb,var(--gold) 55%,#7a4a00)}
+.roll:active{transform:translateY(3px);box-shadow:0 2px 0 color-mix(in srgb,var(--gold) 55%,#7a4a00)}
+.roll:disabled{opacity:.5;cursor:default;transform:none}
+.msg{font-size:clamp(11px,1.6vw,14px);color:var(--ink-soft);max-width:28ch;min-height:2.6em}
+
+/* 側欄 */
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--board);border-radius:24px;padding:16px 18px;box-shadow:var(--shadow);min-width:0}
+.panel h2{font-family:var(--f-display);font-weight:400;font-size:18px;margin:0 0 10px}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pcard{border-radius:20px;padding:12px;background:var(--cell);min-width:0;border:3px solid transparent;text-align:center}
+.pcard.t0{background:color-mix(in srgb,var(--p1) 12%,var(--cell))} .pcard.t1{background:color-mix(in srgb,var(--p2) 12%,var(--cell))}
+.pcard.active.t0{border-color:var(--p1)} .pcard.active.t1{border-color:var(--p2)}
+.pcard .who{display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700;min-width:0}
+.pcard .who span:last-child{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:26px;flex:none}
+.av.t0{background:color-mix(in srgb,var(--p1) 30%,var(--board))} .av.t1{background:color-mix(in srgb,var(--p2) 30%,var(--board))}
+.stat{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);font-variant-numeric:tabular-nums;margin-top:2px}
+.stat b{color:var(--ink);font-size:14.5px}
+.stat .land{font-family:var(--f-display);font-size:26px;line-height:1.1;font-weight:400}
+.pcard .ticket{font-size:12px;margin-top:6px}
+details.logbox summary{cursor:pointer;font-family:var(--f-display);font-size:16px;list-style:none;display:flex;justify-content:space-between}
+details.logbox summary::-webkit-details-marker{display:none}
+details.logbox summary::after{content:"＋";color:var(--ink-soft)}
+details.logbox[open] summary::after{content:"－"}
+.log{max-height:240px;overflow:auto;display:flex;flex-direction:column;gap:6px;font-size:13px;margin-top:10px}
+.log div{padding:4px 10px;border-radius:10px;background:var(--cell)}
+.log div.t0{background:color-mix(in srgb,var(--p1) 12%,var(--cell))} .log div.t1{background:color-mix(in srgb,var(--p2) 12%,var(--cell))}
+.rules{font-size:13.5px;color:var(--ink-soft);margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+.rules b{color:var(--ink)}
+
+/* 設定 */
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label,.field .lab{font-size:13px;color:var(--ink-soft);font-weight:500}
+.field input[type=text],.field select{font:inherit;padding:8px 12px;border-radius:14px;border:2px solid var(--line);background:var(--cell);color:var(--ink);width:100%}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.units{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.units label{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 10px;border-radius:12px;background:var(--cell);cursor:pointer;min-width:0}
+.units label span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.units input{accent-color:var(--p1)}
+.minibtns{display:flex;gap:8px;margin-top:8px}
+.minibtns button{font-size:12.5px;padding:3px 12px}
+.start{width:100%;margin-top:6px}
+
+/* 對話框 */
+.ov{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;z-index:50;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.dlg{background:var(--board);color:var(--ink);border-radius:28px;max-width:580px;width:100%;max-height:100%;overflow:auto;padding:22px 22px 22px;box-shadow:0 20px 50px rgba(0,0,0,.25);animation:pop .22s cubic-bezier(.3,1.4,.6,1)}
+@keyframes pop{from{transform:scale(.9)}to{transform:scale(1)}}
+.dlg .eyebrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink-soft);margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;border-radius:999px;padding:2px 10px;color:#fff;font-weight:700;font-size:12.5px}
+.dlg h3{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0 0 8px;text-wrap:balance}
+.dlg .q{font-size:clamp(17px,2.6vw,21px);font-weight:500;line-height:1.7;margin:6px 0 14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.opts{grid-template-columns:1fr}}
+.opt{text-align:left;background:var(--cell);border:2.5px solid transparent;border-radius:18px;padding:10px 14px;font-size:16.5px;line-height:1.6;display:flex;gap:10px;align-items:center;min-height:54px;box-shadow:0 3px 0 var(--line)}
+.opt:hover:not(:disabled){border-color:var(--gold)}
+.opt .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--board);font-size:13px;font-weight:700}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--cell))}
+.opt.right .k{background:var(--good);color:#fff}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--cell))}
+.opt.wrong .k{background:var(--bad);color:#fff}
+.fb{margin-top:14px;border-radius:18px;padding:12px 16px;background:var(--cell)}
+.fb .v{font-family:var(--f-display);font-size:21px}
+.fb .v.ok{color:var(--good)} .fb .v.no{color:var(--bad)}
+.timer{height:8px;border-radius:999px;background:var(--cell);overflow:hidden;margin:4px 0 10px}
+.timer i{display:block;height:100%;background:var(--gold);border-radius:999px;transition:width 1s linear}
+.timer i.low{background:var(--bad)}
+.btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.btn{border:0;border-radius:999px;padding:10px 20px;font-weight:700;font-size:15.5px;background:var(--cell);color:var(--ink);box-shadow:0 3px 0 var(--line)}
+.btn.main{background:var(--gold);color:var(--gold-ink);box-shadow:0 3px 0 color-mix(in srgb,var(--gold) 55%,#7a4a00)}
+.btn.p0{background:var(--p1);color:#fff;box-shadow:0 3px 0 color-mix(in srgb,var(--p1) 60%,#000)} .btn.p1{background:var(--p2);color:#fff;box-shadow:0 3px 0 color-mix(in srgb,var(--p2) 60%,#000)}
+.btn:disabled{opacity:.45;cursor:default}
+.money{font-variant-numeric:tabular-nums;font-weight:700}
+
+/* 分數 */
+.fr{display:inline-flex;align-items:center;gap:.12em;vertical-align:middle;margin:0 .08em}
+.fr .nd{display:inline-flex;flex-direction:column;align-items:center;font-size:.78em;line-height:1.1}
+.fr .nd span:first-child{border-bottom:1.5px solid currentColor;padding:0 .2em}
+.fr .nd span:last-child{padding:0 .2em}
+
+/* 結算 */
+.res{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.res .pcard .land{font-size:34px}
+.tbl{overflow-x:auto;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--ink-soft);font-weight:500}
+.wronglist{display:flex;flex-direction:column;gap:8px;margin-top:8px;font-size:14px}
+.wronglist div{padding:10px 12px;border-radius:14px;background:var(--cell)}
+.wronglist .a{color:var(--good);font-weight:700}
+
+/* 題庫 */
+.bankq{font-size:14px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.bankq .a{color:var(--good);font-weight:700}
+details.bu{border-radius:16px;padding:8px 14px;margin-bottom:8px;background:var(--cell)}
+details.bu summary{cursor:pointer;font-weight:700}
+.cell.own2{background:color-mix(in srgb,var(--p3) 22%,var(--cell));border-color:color-mix(in srgb,var(--p3) 55%,transparent)}
+.cell.own2 .lv{color:var(--p3)}
+.tok.t2{background:var(--p3)} .turnpill.t2{background:var(--p3)}
+.pcard.t2{background:color-mix(in srgb,var(--p3) 12%,var(--cell))} .pcard.active.t2{border-color:var(--p3)}
+.av.t2{background:color-mix(in srgb,var(--p3) 30%,var(--board))}
+.log div.t2{background:color-mix(in srgb,var(--p3) 12%,var(--cell))}
+.btn.p2{background:var(--p3);color:#fff;box-shadow:0 3px 0 color-mix(in srgb,var(--p3) 60%,#000)}
+.players,.res{display:flex!important;flex-direction:column;gap:8px}
+.pcard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;text-align:left;padding:10px 12px}
+.pcard .pname{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .psub{font-size:12.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.pcard .psub b{color:var(--ink)}
+.pland{text-align:center;line-height:1}
+.pland b{font-family:var(--f-display);font-weight:400;font-size:28px;display:block}
+.pland span{font-size:11px;color:var(--ink-soft)}
+[hidden]{display:none!important}
+.units{grid-template-columns:1fr!important}
+.row3{display:flex;gap:8px}.row3>.field{flex:1;min-width:0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1><span class="logo">🌙</span>翰林四上自然大富翁</h1>
+    <div class="toplinks">
+      <button class="ghost" id="btnBank" type="button">題庫一覽</button>
+      <button class="ghost" id="btnRules" type="button">遊戲規則</button>
+      <button class="ghost" id="btnRestart" type="button" hidden>重新設定</button>
+    </div>
+  </header>
+  <div class="layout">
+    <div class="boardbox"><div class="board" id="board"></div></div>
+    <aside class="side" id="side"></aside>
+  </div>
+</div>
+<div id="ovRoot"></div>
+
+<script src="questions.js"></script>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fx=s=>esc(s).replace(/\{(?:(\d+) )?(\d+)\/(\d+)\}/g,(m,w,n,d)=>
+  `<span class="fr">${w?`<span class="w">${w}</span>`:""}<span class="nd"><span>${n}</span><span>${d}</span></span></span>`);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rnd=n=>Math.floor(Math.random()*n);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const money=n=>"$"+n.toLocaleString("en-US");
+
+const AV=["🐰","🐻","🐱"];
+const START_CASH=1500, PASS_GO=200, BONUS=100;
+const TOWNS=["基隆","淡水","九份","台北","板橋","桃園","新竹","苗栗","台中","彰化","南投","雲林","嘉義","台南","高雄","屏東","墾丁","台東","花蓮","宜蘭"];
+// 24 格：0 起點、6 機會、12 加油站、18 機會，其餘 20 格是土地
+const SPECIAL={0:"start",6:"chance",12:"bonus",18:"chance"};
+function cellRC(i){ if(i<=6) return [1,i+1]; if(i<=12) return [i-5,7]; if(i<=18) return [7,7-(i-12)]; return [7-(i-18),1]; }
+
+const CHANCE=[
+  {t:"熱心參加資源回收，獲得環保獎金",d:"現金 +100",f:async pi=>{gain(pi,100)}},
+  {t:"忘了繳班費",d:"付給銀行 60 元",f:async pi=>{await pay(pi,null,60)}},
+  {t:"搭上順風車",d:"前進 3 格",f:async pi=>{await move(pi,3);await resolve(pi,true)}},
+  {t:"走錯路了",d:"後退 2 格",f:async pi=>{await move(pi,-2);await resolve(pi,true)}},
+  {t:"獲得「免過路費券」",d:"下次踩到對方的地，可以直接免付",f:async pi=>{S.players[pi].pass++}},
+  {t:"數學小老師挑戰",d:"答對一題領 150 元",f:async pi=>{const u=pickUnit();if(await ask(pi,u,{eyebrow:"機會卡挑戰",title:"答對領 150 元"}))gain(pi,150)}},
+  {t:"坐上高鐵",d:"直接回到起點，領 200 元",f:async pi=>{const p=S.players[pi];p.pos=0;gain(pi,PASS_GO);draw()}},
+];
+
+let S=null;
+function fresh(){
+  return {phase:"setup",
+    cfg:{count:2,names:["兔兔隊","熊熊隊","貓貓隊"],units:BANK.map(u=>u.id),rounds:10,timer:30},
+    players:[],board:[],turn:0,round:1,decks:{},log:[],busy:false,msg:"",dice:1,winner:null,end:""};
+}
+function buildBoard(){
+  const units=S.cfg.units; const b=[]; let k=0;
+  for(let i=0;i<24;i++){
+    if(SPECIAL[i]){b.push({type:SPECIAL[i]});continue}
+    const price=120+Math.floor(k/2)*40;
+    b.push({type:"land",name:TOWNS[k],unit:units[k%units.length],price,owner:null,level:0}); k++;
+  }
+  return b;
+}
+const unitOf=id=>BANK.find(u=>u.id===id);
+const toll=sq=>Math.round(sq.price*[0,.4,.8,1.3][sq.level]/10)*10;
+const upCost=sq=>Math.round(sq.price*.5/10)*10;
+const landsOf=pi=>S.board.filter(c=>c.type==="land"&&c.owner===pi);
+const assets=pi=>S.players[pi].cash+landsOf(pi).reduce((s,c)=>s+c.price+(c.level-1)*upCost(c),0);
+function pickUnit(){return S.cfg.units[rnd(S.cfg.units.length)]}
+function nextQ(uid){
+  let d=S.decks[uid];
+  if(!d||!d.length){d=S.decks[uid]=shuffle(unitOf(uid).qs.map((_,i)=>i))}
+  return d.pop();
+}
+function log(t,pi){S.log.unshift({t,pi});S.log=S.log.slice(0,60)}
+function gain(pi,n){S.players[pi].cash+=n;log(`${S.players[pi].name} 獲得 ${money(n)}`,pi)}
+
+/* ---------- 繪製 ---------- */
+function draw(){drawBoard();drawSide();$("#btnRestart").hidden=S.phase==="setup"}
+function drawBoard(){
+  const el=$("#board"); let h="";
+  const board=S.phase==="setup"?buildBoard():S.board;
+  board.forEach((c,i)=>{
+    const [r,col]=cellRC(i);
+    const toks=S.phase==="setup"?"":S.players.map((p,pi)=>p.pos===i?`<span class="tok t${pi}" data-tok="${pi}">${AV[pi]}</span>`:"").join("");
+    const here=S.phase==="play"&&S.players[S.turn].pos===i?" here":"";
+    if(c.type==="land"){
+      const u=unitOf(c.unit);
+      const own=c.owner==null?"":` own${c.owner}`;
+      const lv=c.owner==null?"":"▲".repeat(c.level);
+      const info=c.owner==null?`${c.name}，${u.name}，價格 ${c.price}`:`${c.name}，屬於${S.players[c.owner].name}，過路費 ${toll(c)}`;
+      h+=`<div class="cell${own}${here}" style="grid-row:${r};grid-column:${col}" title="${esc(info)}">
+        <div class="tag" style="--u:${u.color}">${u.id} ${u.short}</div>
+        <div class="nm">${c.name}</div>
+        <div class="pr">${c.owner==null?"$"+c.price:"過路 $"+toll(c)}</div>
+        <div class="lv">${lv}</div><div class="toks">${toks}</div></div>`;
+    }else{
+      const L={start:["起點","經過領 $200"],chance:["機會","抽一張卡"],bonus:["加油站","答對領 $100"]}[c.type];
+      h+=`<div class="cell special${here}" style="grid-row:${r};grid-column:${col}"><div class="big">${L[0]}</div><div class="sub">${L[1]}</div><div class="toks">${toks}</div></div>`;
+    }
+  });
+  h+=`<div class="center">${centerHTML()}</div>`;
+  el.innerHTML=h;
+  const rb=$("#rollBtn"); if(rb) rb.onclick=takeTurn;
+}
+function diceHTML(n,cls=""){
+  const on={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]}[n];
+  return `<div class="dice ${cls}" id="dice" aria-label="骰子 ${n} 點">${[...Array(9)].map((_,i)=>`<i class="${on.includes(i)?"on":""}"></i>`).join("")}</div>`;
+}
+function centerHTML(){
+  if(S.phase==="setup") return `<div class="ttl">${AV.slice(0,S.cfg.count).join(" ")}<br>${S.cfg.count===2?"雙人對戰":"三隊搶地盤"}</div>${diceHTML(5)}<div class="msg">答對才能買地，踩到對方的地答對就免付過路費！</div>`;
+  if(S.phase==="over") return `<div class="ttl">遊戲結束</div><div class="msg">${esc(S.end)}</div><button class="roll" id="resultBtn" type="button">看結算</button>`;
+  const p=S.players[S.turn];
+  return `<div class="round">第 ${S.round} / ${S.cfg.rounds} 回合 · 剩 ${S.board.filter(c=>c.type==="land"&&c.owner==null).length} 塊空地</div>
+    <span class="turnpill t${S.turn}">輪到 ${esc(p.name)}</span>
+    ${diceHTML(S.dice)}
+    <button class="roll" id="rollBtn" type="button" ${S.busy?"disabled":""}>擲骰子</button>
+    <div class="msg">${esc(S.msg||"")}</div>`;
+}
+function drawSide(){
+  const side=$("#side");
+  if(S.phase==="setup"){side.innerHTML=setupHTML();bindSetup();return}
+  const pc=S.players.map((p,pi)=>`<div class="pcard t${pi} ${S.phase==="play"&&S.turn===pi?"active":""}">
+      <span class="av t${pi}">${AV[pi]}</span>
+      <div style="min-width:0"><div class="pname">${esc(p.name)}</div>
+        <div class="psub">現金 <b>${money(p.cash)}</b>　答對 <b>${p.stats.c}/${p.stats.n}</b>${p.pass?`　🎫×${p.pass}`:""}</div></div>
+      <div class="pland"><b>${landsOf(pi).length}</b><span>塊地</span></div>
+    </div>`).join("");
+  side.innerHTML=`<div class="panel"><h2>戰況</h2><div class="players">${pc}</div></div>
+        <div class="panel"><details class="logbox"><summary>對戰紀錄</summary><div class="log">${S.log.map(l=>`<div class="${l.pi==null?"":"t"+l.pi}">${fx(l.t)}</div>`).join("")||"<div>還沒有紀錄</div>"}</div></details></div>`;
+  const rb=$("#resultBtn"); if(rb) rb.onclick=showResult;
+}
+function legendHTML(){
+  return `<div class="legend">${S.cfg.units.map(id=>{const u=unitOf(id);return `<span><i style="background:${u.color}"></i>${u.id} ${u.name}</span>`}).join("")}</div>`;
+}
+function setupHTML(){
+  const c=S.cfg;
+  return `<div class="panel"><h2>開始前設定一下</h2>
+    <form id="setup" autocomplete="off">
+    <div class="field"><label for="cnt">對戰人數</label><select id="cnt"><option value="2" ${c.count===2?"selected":""}>雙人對戰</option><option value="3" ${c.count===3?"selected":""}>三人對戰</option></select></div>
+    <div class="row3">
+      <div class="field"><label for="n0">🐰 隊名</label><input type="text" id="n0" maxlength="8" value="${esc(c.names[0])}"></div>
+      <div class="field"><label for="n1">🐻 隊名</label><input type="text" id="n1" maxlength="8" value="${esc(c.names[1])}"></div>
+      <div class="field" id="f2" ${c.count===2?"hidden":""}><label for="n2">🐱 隊名</label><input type="text" id="n2" maxlength="8" value="${esc(c.names[2])}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="rounds">回合數（每人）</label><select id="rounds">${[6,8,10,12,15,20].map(n=>`<option ${n==c.rounds?"selected":""}>${n}</option>`).join("")}</select></div>
+      <div class="field"><label for="timer">每題限時</label><select id="timer">${[[0,"不限時"],[20,"20 秒"],[30,"30 秒"],[45,"45 秒"],[60,"60 秒"],[90,"90 秒"]].map(([v,t])=>`<option value="${v}" ${v==c.timer?"selected":""}>${t}</option>`).join("")}</select></div>
+    </div>
+    <div class="field"><span class="lab">出題單元（土地依序分配給勾選的單元）</span>
+      <div class="units">${BANK.map(u=>`<label><input type="checkbox" id="u${u.id}" value="${u.id}" ${c.units.includes(u.id)?"checked":""}><i style="width:8px;height:8px;border-radius:2px;background:${u.color};flex:none"></i><span>${u.id} ${u.name}</span></label>`).join("")}</div>
+      <div class="minibtns"><button type="button" class="ghost" id="allU">全選</button><button type="button" class="ghost" id="noneU">全不選</button></div>
+    </div>
+    <button class="roll start" type="submit" id="startBtn">開始遊戲</button>
+    </form></div>
+    <div class="panel"><h2>怎麼玩</h2>${rulesHTML()}</div>`;
+}
+function rulesHTML(){
+  return `<ul class="rules">
+    <li>大家輪流擲骰子，沿著台灣一圈前進，經過<b>起點領 $200</b>。</li>
+    <li>走到<b>空地</b>：回答該單元的題目，<b>答對才能買</b>。</li>
+    <li>走到<b>自己的地</b>：答對可以付錢加蓋（最多 ▲▲▲），過路費變高。</li>
+    <li>走到<b>對方的地</b>：先答一題，<b>答對免付過路費</b>，答錯照付。</li>
+    <li>現金不夠時，銀行會半價收回你最便宜的地。</li>
+    <li>回合用完或空地賣完時結束，<b>地盤多的一隊獲勝</b>；一樣多就比總資產。</li></ul>`;
+}
+function readCfg(){
+  const c=S.cfg;
+  c.count=+$("#cnt").value; $("#f2").hidden=c.count<3;
+  c.names=[$("#n0").value.trim()||"兔兔隊",$("#n1").value.trim()||"熊熊隊",$("#n2").value.trim()||"貓貓隊"];
+  c.rounds=+$("#rounds").value; c.timer=+$("#timer").value;
+  c.units=BANK.filter(u=>$("#u"+u.id).checked).map(u=>u.id);
+}
+function bindSetup(){
+  const f=$("#setup");
+  f.addEventListener("change",()=>{readCfg();if(S.cfg.units.length)drawBoard()});
+  $("#allU").onclick=()=>{BANK.forEach(u=>$("#u"+u.id).checked=true);readCfg();drawBoard()};
+  $("#noneU").onclick=()=>{BANK.forEach(u=>$("#u"+u.id).checked=false);readCfg()};
+  f.addEventListener("submit",e=>{e.preventDefault();readCfg();
+    if(!S.cfg.units.length){dialog({title:"請至少勾選一個單元",html:"<p>題目會從勾選的單元裡出。</p>",buttons:[{label:"知道了",cls:"main"}]});return}
+    startGame()});
+}
+function startGame(){
+  S.players=S.cfg.names.slice(0,S.cfg.count).map(n=>({name:n,pos:0,cash:START_CASH,pass:0,stats:{c:0,n:0,u:{}},wrong:[]}));
+  S.board=buildBoard(); S.turn=0; S.round=1; S.decks={}; S.log=[]; S.busy=false; S.winner=null; S.end=""; S.bankrupt=null;
+  S.phase="play"; S.msg=`${S.players[0].name} 先開始，按「擲骰子」。`;
+  log("遊戲開始！每人 "+money(START_CASH));
+  draw(); window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------- 對話框 ---------- */
+function dialog({eyebrow="",title="",html="",buttons=[{label:"好",cls:"main"}]}){
+  return new Promise(res=>{
+    const root=$("#ovRoot");
+    root.innerHTML=`<div class="ov" role="dialog" aria-modal="true"><div class="dlg">
+      ${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:""}${title?`<h3>${fx(title)}</h3>`:""}${html}
+      <div class="btns">${buttons.map((b,i)=>`<button type="button" class="btn ${b.cls||""}" data-i="${i}" ${b.disabled?"disabled":""}>${esc(b.label)}</button>`).join("")}</div></div></div>`;
+    root.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{root.innerHTML="";res(buttons[+b.dataset.i].value)});
+    const first=root.querySelector(".btn:not(:disabled)"); if(first) first.focus();
+  });
+}
+function ask(pi,uid,{eyebrow="",title="",context=""}={}){
+  return new Promise(res=>{
+    const u=unitOf(uid), qi=nextQ(uid), q=u.qs[qi];
+    const opts=shuffle([0,1,2,3]); const p=S.players[pi];
+    const root=$("#ovRoot"); const T=S.cfg.timer; let left=T, timerId=null, done=false;
+    root.innerHTML=`<div class="ov" role="dialog" aria-modal="true"><div class="dlg">
+      <div class="eyebrow"><span class="chip" style="background:var(--p${pi+1})">${esc(p.name)}</span><span class="chip" style="background:${u.color}">${u.id} ${u.name}</span>${eyebrow?`<span>${esc(eyebrow)}</span>`:""}</div>
+      ${title?`<h3>${fx(title)}</h3>`:""}${context}
+      ${T?`<div class="timer"><i id="tbar" style="width:100%"></i></div>`:""}
+      <div class="q">${fx(q[0])}</div>
+      <div class="opts">${opts.map((o,k)=>`<button type="button" class="opt" data-o="${o}"><span class="k">${"ABCD"[k]}</span><span>${fx(q[o+1])}</span></button>`).join("")}</div>
+      <div id="fb"></div></div></div>`;
+    const finish=(chosen)=>{
+      if(done) return; done=true; clearInterval(timerId);
+      const ok=chosen===0;
+      root.querySelectorAll(".opt").forEach(b=>{b.disabled=true;const o=+b.dataset.o;if(o===0)b.classList.add("right");else if(o===chosen)b.classList.add("wrong")});
+      p.stats.n++; if(ok)p.stats.c++;
+      const su=p.stats.u[uid]||(p.stats.u[uid]=[0,0]); su[1]++; if(ok)su[0]++;
+      if(!ok) p.wrong.push({uid,qi});
+      $("#fb").innerHTML=`<div class="fb"><div class="v ${ok?"ok":"no"}">${ok?"答對了！":(chosen==null?"時間到！":"答錯了")}</div>
+        <div>${ok?"":`正確答案：<b>${fx(q[1])}</b><br>`}${fx(q[5])}</div></div>
+        <div class="btns"><button type="button" class="btn main" id="goOn">繼續</button></div>`;
+      const g=$("#goOn"); g.focus(); g.onclick=()=>{root.innerHTML="";res(ok)};
+    };
+    root.querySelectorAll(".opt").forEach(b=>b.onclick=()=>finish(+b.dataset.o));
+    if(T){timerId=setInterval(()=>{left--;const bar=$("#tbar");if(bar){bar.style.width=(left/T*100)+"%";if(left<=5)bar.classList.add("low")}if(left<=0)finish(null)},1000)}
+  });
+}
+
+/* ---------- 遊戲流程 ---------- */
+async function rollDice(){
+  let n=1; for(let i=0;i<9;i++){n=rnd(6)+1;const d=$("#dice");if(d)d.outerHTML=diceHTML(n,"rolling");await sleep(60)}
+  S.dice=n; const d2=$("#dice"); if(d2) d2.classList.remove("rolling"); return n;
+}
+async function move(pi,steps){
+  const p=S.players[pi], dir=steps>0?1:-1;
+  for(let s=0;s<Math.abs(steps);s++){
+    p.pos=(p.pos+dir+24)%24;
+    if(dir>0&&p.pos===0){p.cash+=PASS_GO;log(`${p.name} 經過起點，領 ${money(PASS_GO)}`,pi)}
+    drawBoard(); const t=document.querySelector(`[data-tok="${pi}"]`); if(t)t.classList.add("hop");
+    await sleep(230);
+  }
+  drawSide();
+}
+async function pay(from,to,amt){
+  const p=S.players[from];
+  while(p.cash<amt){
+    const mine=landsOf(from).sort((a,b)=>a.price-b.price);
+    if(!mine.length) break;
+    const c=mine[0], back=Math.round((c.price+(c.level-1)*upCost(c))/2/10)*10;
+    c.owner=null; c.level=0; p.cash+=back;
+    log(`${p.name} 現金不足，${c.name} 被銀行以 ${money(back)} 收回`,from);
+    await dialog({eyebrow:"現金不足",title:`${c.name} 被銀行收回`,html:`<p>${esc(p.name)} 的現金不夠付 ${money(amt)}，銀行用半價 ${money(back)} 收回了 ${c.name}。</p>`,buttons:[{label:"知道了",cls:"main"}]});
+  }
+  const paid=Math.min(amt,p.cash); p.cash-=paid;
+  if(to!=null){S.players[to].cash+=paid;log(`${p.name} 付給 ${S.players[to].name} 過路費 ${money(paid)}`,from)}
+  else log(`${p.name} 付給銀行 ${money(paid)}`,from);
+  if(paid<amt){S.bankrupt=from}
+  drawSide();
+}
+async function resolve(pi,fromCard=false){
+  const p=S.players[pi], c=S.board[p.pos];
+  if(c.type==="start"){S.msg=`${p.name} 停在起點。`;return}
+  if(c.type==="bonus"){
+    const ok=await ask(pi,pickUnit(),{eyebrow:"加油站",title:"答對領 $100"});
+    if(ok){gain(pi,BONUS);S.msg=`${p.name} 在加油站答對，領 ${money(BONUS)}。`}else S.msg=`${p.name} 在加油站沒答對。`;
+    return;
+  }
+  if(c.type==="chance"){
+    if(fromCard){S.msg=`${p.name} 停在機會格。`;return}
+    const card=CHANCE[rnd(CHANCE.length)];
+    await dialog({eyebrow:`<span class="chip" style="background:var(--p${pi+1})">${esc(p.name)}</span> 機會卡`,title:card.t,html:`<p style="font-size:18px">${esc(card.d)}</p>`,buttons:[{label:"好！",cls:"main"}]});
+    log(`${p.name} 抽到機會卡：${card.t}（${card.d}）`,pi); S.msg=`${p.name}：${card.t}`;
+    await card.f(pi); return;
+  }
+  const u=unitOf(c.unit);
+  if(c.owner==null){
+    const ok=await ask(pi,c.unit,{eyebrow:"空地",title:`${c.name}　售價 ${money(c.price)}`,context:`<p style="margin:0 0 4px;color:var(--ink-soft)">答對才能買下這塊地。</p>`});
+    if(!ok){S.msg=`${p.name} 沒答對，不能買 ${c.name}。`;log(`${p.name} 答錯，沒能買下 ${c.name}`,pi);return}
+    const can=p.cash>=c.price;
+    const buy=await dialog({eyebrow:"答對了",title:`要買下 ${c.name} 嗎？`,html:`<p>售價 <span class="money">${money(c.price)}</span>，你有 <span class="money">${money(p.cash)}</span>。買下後對方踩到要付過路費 ${money(Math.round(c.price*.4/10)*10)}。</p>${can?"":"<p style='color:var(--bad)'>現金不夠，這次買不起。</p>"}`,
+      buttons:[{label:"先不買",value:false},{label:"買下！",value:true,cls:"p"+pi,disabled:!can}]});
+    if(buy){p.cash-=c.price;c.owner=pi;c.level=1;S.msg=`${p.name} 買下了 ${c.name}！`;log(`${p.name} 用 ${money(c.price)} 買下 ${c.name}`,pi)}
+    else S.msg=`${p.name} 沒有買 ${c.name}。`;
+    return;
+  }
+  if(c.owner===pi){
+    if(c.level>=3){S.msg=`${c.name} 已經蓋滿了。`;return}
+    const cost=upCost(c);
+    const go=await dialog({eyebrow:"自己的地",title:`要挑戰加蓋 ${c.name} 嗎？`,html:`<p>答對後付 <span class="money">${money(cost)}</span> 加蓋一層，過路費從 ${money(toll(c))} 變成 ${money(Math.round(c.price*[0,.4,.8,1.3][c.level+1]/10)*10)}。</p>${p.cash<cost?"<p style='color:var(--bad)'>現金不夠加蓋。</p>":""}`,
+      buttons:[{label:"不用了",value:false},{label:"挑戰加蓋",value:true,cls:"main",disabled:p.cash<cost}]});
+    if(!go){S.msg=`${p.name} 停在自己的 ${c.name}。`;return}
+    const ok=await ask(pi,c.unit,{eyebrow:"加蓋挑戰",title:c.name});
+    if(ok){p.cash-=cost;c.level++;S.msg=`${p.name} 把 ${c.name} 加蓋到 ${"▲".repeat(c.level)}！`;log(`${p.name} 加蓋 ${c.name}（${money(cost)}）`,pi)}
+    else S.msg=`${p.name} 沒答對，這次不能加蓋。`;
+    return;
+  }
+  // 對方的地
+  const o=c.owner, fee=toll(c), op=S.players[o];
+  if(p.pass>0){
+    const use=await dialog({eyebrow:`踩到 ${esc(op.name)} 的地`,title:`${c.name}　過路費 ${money(fee)}`,html:`<p>你有免過路費券 ${p.pass} 張，要現在使用嗎？不用的話可以答題挑戰。</p>`,
+      buttons:[{label:"答題挑戰",value:false},{label:"使用免過路費券",value:true,cls:"main"}]});
+    if(use){p.pass--;S.msg=`${p.name} 用了免過路費券，通過 ${c.name}。`;log(`${p.name} 使用免過路費券通過 ${c.name}`,pi);return}
+  }
+  const ok=await ask(pi,c.unit,{eyebrow:`踩到 ${op.name} 的地`,title:`${c.name}　過路費 ${money(fee)}`,context:`<p style="margin:0 0 4px;color:var(--ink-soft)">答對就免付過路費，答錯要付 ${money(fee)} 給 ${esc(op.name)}。</p>`});
+  if(ok){S.msg=`${p.name} 答對了，免付 ${c.name} 的過路費！`;log(`${p.name} 答對，免付 ${c.name} 過路費`,pi)}
+  else{await pay(pi,o,fee);S.msg=`${p.name} 付給 ${op.name} ${money(fee)}。`}
+}
+async function takeTurn(){
+  if(S.busy||S.phase!=="play") return;
+  S.busy=true; S.msg=""; const rb=$("#rollBtn"); if(rb) rb.disabled=true;
+  const pi=S.turn, p=S.players[pi];
+  const n=await rollDice(); log(`${p.name} 擲出 ${n} 點`,pi);
+  await move(pi,n);
+  await resolve(pi);
+  if(checkEnd()){S.busy=false;draw();showResult();return}
+  S.turn=(S.turn+1)%S.players.length; if(S.turn===0) S.round++;
+  if(S.round>S.cfg.rounds){endGame("回合用完了");S.busy=false;draw();showResult();return}
+  S.busy=false; S.msg=(S.msg?S.msg+" ":"")+`換 ${S.players[S.turn].name}。`; draw();
+}
+function checkEnd(){
+  if(S.bankrupt!=null){endGame(`${S.players[S.bankrupt].name} 付不出錢，破產了`);return true}
+  if(S.board.every(c=>c.type!=="land"||c.owner!=null)){endGame("所有空地都賣完了");return true}
+  return false;
+}
+function endGame(reason){
+  S.phase="over"; S.end=reason;
+  if(S.winner==null){
+    const r=S.players.map((_,i)=>i).filter(i=>i!==S.bankrupt)
+      .sort((a,b)=>(landsOf(b).length-landsOf(a).length)||(assets(b)-assets(a)));
+    const same=(a,b)=>landsOf(a).length===landsOf(b).length&&assets(a)===assets(b);
+    S.winner=r.length>1&&same(r[0],r[1])?-1:r[0];
+  }
+  log("遊戲結束："+reason);
+}
+function showResult(){
+  const W=S.winner;
+  const head=W===-1?"平手！":`${S.players[W].name} 獲勝！`;
+  const cards=S.players.map((p,pi)=>`<div class="pcard t${pi} ${pi===W?"active":""}">
+    <span class="av t${pi}">${pi===W?"🏆":AV[pi]}</span>
+    <div style="min-width:0"><div class="pname">${esc(p.name)}</div>
+      <div class="psub">總資產 <b>${money(assets(pi))}</b>　答對率 <b>${p.stats.n?Math.round(p.stats.c/p.stats.n*100):0}%</b>（${p.stats.c}/${p.stats.n}）</div></div>
+    <div class="pland"><b>${landsOf(pi).length}</b><span>塊地</span></div></div>`).join("");
+  const ids=S.cfg.units.filter(id=>S.players.some(p=>p.stats.u[id]));
+  const rows=ids.map(id=>{const u=unitOf(id);return `<tr><td><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${u.color}"></i> ${u.id} ${u.name}</td>${S.players.map(p=>{const s=p.stats.u[id];return `<td>${s?`${s[0]}/${s[1]}`:"—"}</td>`}).join("")}</tr>`}).join("");
+  const wrong=S.players.map((p,pi)=>p.wrong.length?`<h3 style="font-size:17px;margin:14px 0 4px">${esc(p.name)} 答錯的題目</h3><div class="wronglist">${p.wrong.map(w=>{const q=unitOf(w.uid).qs[w.qi];return `<div><span class="chip" style="background:${unitOf(w.uid).color}">${w.uid}</span> ${fx(q[0])}<br><span class="a">答案：${fx(q[1])}</span>　${fx(q[5])}</div>`}).join("")}</div>`:"").join("");
+  dialog({eyebrow:esc(S.end),title:head,html:`<div class="res">${cards}</div>
+    ${rows?`<div class="tbl"><table><thead><tr><th>單元</th>${S.players.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`:""}
+    ${wrong}`,buttons:[{label:"關閉",value:"x"},{label:"再玩一局",value:"again",cls:"main"}]})
+  .then(v=>{if(v==="again"){S.phase="setup";draw()}});
+}
+function showBank(){
+  const html=BANK.map(u=>`<details class="bu"><summary><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${u.color}"></i> 第 ${u.id} 單元 ${u.name}（${u.qs.length} 題）</summary>
+    ${u.qs.map((q,i)=>`<div class="bankq">${i+1}. ${fx(q[0])}<br><span class="a">✔ ${fx(q[1])}</span>　<span style="color:var(--ink-soft)">誘答：${[2,3,4].map(k=>fx(q[k])).join("、")}</span></div>`).join("")}</details>`).join("");
+  dialog({eyebrow:"教師用",title:`題庫一覽（共 ${BANK.reduce((s,u)=>s+u.qs.length,0)} 題）`,html,buttons:[{label:"關閉",cls:"main"}]});
+}
+$("#btnBank").onclick=showBank;
+$("#btnRules").onclick=()=>dialog({title:"遊戲規則",html:rulesHTML(),buttons:[{label:"知道了",cls:"main"}]});
+$("#btnRestart").onclick=async()=>{
+  const v=await dialog({title:"要結束這局，回到設定嗎？",html:"<p>目前的戰況會清除。</p>",buttons:[{label:"繼續玩",value:false},{label:"回到設定",value:true,cls:"main"}]});
+  if(v){S.phase="setup";S.busy=false;draw()}
+};
+
+function start(data){
+  S=(data&&data.S)?data.S:fresh(); S.busy=false; draw();
+}
+try{window.claude?.hot?.snapshot?.(()=>({S}))}catch(e){}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
+
+</body>
+</html>
